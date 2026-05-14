@@ -1,0 +1,56 @@
+{
+  "_comment": "LoRA training workflow using ComfyUI-FluxTrainer extension (https://github.com/ostris/ai-toolkit/tree/main/extensions/built_in/dataset_augmentation). Requires the 'ComfyUI-FluxTrainer' custom node.",
+  "_setup_note": "Install: cd ComfyUI/custom_nodes && git clone https://github.com/aidenlt/ComfyUI-FluxTrainer",
+  "_alternative": "For production use, run ai-toolkit directly on DGX. See flux_lora_training_cli.sh for the equivalent CLI command.",
+  "1": {
+    "class_type": "FluxTrainModelConfig",
+    "inputs": {
+      "model_name": "flux1-dev.safetensors",
+      "quantization": "none",
+      "linear_only": false
+    }
+  },
+  "2": {
+    "class_type": "FluxTrainDatasetConfig",
+    "inputs": {
+      "dataset_path": "/path/to/training_images",
+      "caption_extension": ".txt",
+      "resolution": 1024,
+      "batch_size": 1,
+      "num_repeats": 10,
+      "trigger_word": "TOK"
+    }
+  },
+  "3": {
+    "class_type": "FluxTrainNetworkConfig",
+    "inputs": {
+      "network_module": "networks.lora_flux",
+      "network_dim": 16,
+      "network_alpha": 1,
+      "train_t5xxl": false
+    }
+  },
+  "4": {
+    "class_type": "FluxTrainOptimizerConfig",
+    "inputs": {
+      "optimizer_type": "adamw8bit",
+      "learning_rate": 0.0004,
+      "lr_scheduler": "cosine_with_restarts",
+      "lr_warmup_steps": 100,
+      "max_train_steps": 1000
+    }
+  },
+  "5": {
+    "class_type": "FluxTrainer",
+    "inputs": {
+      "model_config": ["1", 0],
+      "dataset_config": ["2", 0],
+      "network_config": ["3", 0],
+      "optimizer_config": ["4", 0],
+      "output_name": "user_lora",
+      "output_dir": "/path/to/ComfyUI/models/loras",
+      "save_every_n_steps": 250,
+      "mixed_precision": "bf16"
+    }
+  }
+}

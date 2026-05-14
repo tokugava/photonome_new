@@ -1,0 +1,238 @@
+{
+  "last_node_id": 10,
+  "last_link_id": 11,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UNETLoader",
+      "pos": [0, 0],
+      "size": [315, 98],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [1],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "UNETLoader"},
+      "widgets_values": ["qwen_image_edit_transformer.safetensors", "default"]
+    },
+    {
+      "id": 2,
+      "type": "CLIPLoader",
+      "pos": [0, 150],
+      "size": [315, 82],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [2],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "CLIPLoader"},
+      "widgets_values": ["qwen_image_edit_clip.safetensors", "qwen_image"]
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [0, 280],
+      "size": [315, 82],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [3, 10],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "VAELoader"},
+      "widgets_values": ["qwen_image_edit_vae.safetensors"]
+    },
+    {
+      "id": 4,
+      "type": "LoadImage",
+      "pos": [380, 0],
+      "size": [315, 80],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [4],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {"Node name for S&R": "LoadImage"},
+      "widgets_values": ["input.png"]
+    },
+    {
+      "id": 5,
+      "type": "TextEncodeQwenImageEdit",
+      "pos": [380, 130],
+      "size": [430, 160],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 2},
+        {"name": "vae", "type": "VAE", "link": 3},
+        {"name": "image", "type": "IMAGE", "link": 4}
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [5, 6],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "TextEncodeQwenImageEdit"},
+      "widgets_values": ["Edit this image as described: {prompt}"]
+    },
+    {
+      "id": 6,
+      "type": "ConditioningZeroOut",
+      "pos": [380, 350],
+      "size": [210, 46],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {"name": "conditioning", "type": "CONDITIONING", "link": 5}
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [7],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "ConditioningZeroOut"},
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "EmptyQwenImageLayeredLatentImage",
+      "pos": [380, 450],
+      "size": [315, 106],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [8],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "EmptyQwenImageLayeredLatentImage"},
+      "widgets_values": [640, 640, 0, 1]
+    },
+    {
+      "id": 8,
+      "type": "KSampler",
+      "pos": [870, 0],
+      "size": [315, 262],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {"name": "model", "type": "MODEL", "link": 1},
+        {"name": "positive", "type": "CONDITIONING", "link": 6},
+        {"name": "negative", "type": "CONDITIONING", "link": 7},
+        {"name": "latent_image", "type": "LATENT", "link": 8}
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [9],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "KSampler"},
+      "widgets_values": [42, "randomize", 40, 4.0, "euler", "simple", 1.0]
+    },
+    {
+      "id": 9,
+      "type": "VAEDecode",
+      "pos": [870, 320],
+      "size": [210, 46],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 9},
+        {"name": "vae", "type": "VAE", "link": 10}
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [11],
+          "slot_index": 0
+        }
+      ],
+      "properties": {"Node name for S&R": "VAEDecode"},
+      "widgets_values": []
+    },
+    {
+      "id": 10,
+      "type": "SaveImage",
+      "pos": [870, 430],
+      "size": [210, 58],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 11}
+      ],
+      "outputs": [],
+      "properties": {"Node name for S&R": "SaveImage"},
+      "widgets_values": ["photonome_qwen_edit"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 8, 0, "MODEL"],
+    [2, 2, 0, 5, 0, "CLIP"],
+    [3, 3, 0, 5, 1, "VAE"],
+    [4, 4, 0, 5, 2, "IMAGE"],
+    [5, 5, 0, 6, 0, "CONDITIONING"],
+    [6, 5, 0, 8, 1, "CONDITIONING"],
+    [7, 6, 0, 8, 2, "CONDITIONING"],
+    [8, 7, 0, 8, 3, "LATENT"],
+    [9, 8, 0, 9, 0, "LATENT"],
+    [10, 3, 0, 9, 1, "VAE"],
+    [11, 9, 0, 10, 0, "IMAGE"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
