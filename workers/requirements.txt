@@ -1,0 +1,14 @@
+google-cloud-pubsub>=2.23
+google-cloud-storage>=2.18
+firebase-admin>=6.5
+diffusers @ git+https://github.com/huggingface/diffusers
+transformers>=4.46
+accelerate>=1.0
+peft>=0.13
+safetensors>=0.4
+torch>=2.4
+Pillow>=10.4
+huggingface_hub[hf_transfer]>=0.26
+pydantic-settings>=2.5
+structlog>=24.4
+filelock>=3.16

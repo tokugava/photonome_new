@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photonome-workers"
+version = "0.1.0"
+description = "Pub/Sub-driven GPU workers for image edit, LoRA training, and generation."
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[project.scripts]
+edit-worker = "edit_worker:main"
+train-worker = "train_worker:main"
+generate-worker = "generate_worker:main"
+
+[tool.setuptools]
+py-modules = ["edit_worker", "train_worker", "generate_worker"]
+
+[tool.setuptools.packages.find]
+include = ["core*"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
