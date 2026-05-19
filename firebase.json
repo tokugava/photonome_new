@@ -24,5 +24,11 @@
   ],
   "storage": {
     "rules": "storage.rules"
+  },
+  "hosting": {
+    "site": "photonome-test",
+    "public": "web/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
   }
 }

@@ -79,6 +79,7 @@ def write_yaml(
                 name_or_path: "{model_id}"
                 is_flux: true
                 quantize: true
+                low_vram: true
               sample:
                 sampler: "flowmatch"
                 sample_every: 250
@@ -101,13 +102,15 @@ def write_yaml(
 
 def run_aitoolkit(config_path: Path) -> None:
     settings = get_settings()
+    ai_python = settings.ai_toolkit_dir / ".venv" / "bin" / "python"
+    python = str(ai_python) if ai_python.exists() else sys.executable
     env = os.environ.copy()
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     if settings.hf_token:
         env["HF_TOKEN"] = settings.hf_token
     log.info("ai_toolkit_starting", config=str(config_path))
     subprocess.run(
-        [sys.executable, str(settings.ai_toolkit_dir / "run.py"), str(config_path)],
+        [python, str(settings.ai_toolkit_dir / "run.py"), str(config_path)],
         cwd=str(settings.ai_toolkit_dir),
         env=env,
         check=True,

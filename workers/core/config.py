@@ -18,12 +18,12 @@ class Settings(BaseSettings):
     completions_topic: str = "job-completions"
 
     flux_kontext_model_id: str = "black-forest-labs/FLUX.1-Kontext-dev"
-    flux2_model_id: str = "black-forest-labs/FLUX.2-dev"
+    flux2_model_id: str = "black-forest-labs/FLUX.1-dev"
 
     ai_toolkit_dir: Path = Path("/opt/ai-toolkit")
-    lora_cache_dir: Path = Path("/var/cache/photonome/loras")
-    work_dir: Path = Path("/var/cache/photonome/work")
-    vram_lock_dir: Path = Path("/var/run/photonome")
+    lora_cache_dir: Path = Path.home() / ".cache" / "photonome" / "loras"
+    work_dir: Path = Path.home() / ".cache" / "photonome" / "work"
+    vram_lock_dir: Path = Path.home() / ".cache" / "photonome" / "run"
 
     train_lease_hours: int = 4
     inference_lease_hours: int = 2

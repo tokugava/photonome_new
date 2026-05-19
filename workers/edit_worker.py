@@ -24,9 +24,10 @@ def _handle_factory(settings, pipe):
         workdir.mkdir(parents=True, exist_ok=True)
         try:
             src = firebase.download(msg["inputImagePath"], workdir / "input.png")
-            adapter_name, _ = edit_pipeline.apply_style(pipe, msg["style"])
+            style = msg.get("style")
+            adapter_name = edit_pipeline.apply_style(pipe, style)[0] if style else None
             try:
-                log_ctx.info("running_inference", style=msg["style"])
+                log_ctx.info("running_inference", style=style)
                 result = pipe(
                     image=Image.open(src).convert("RGB"),
                     prompt=msg.get("prompt", ""),
@@ -37,7 +38,8 @@ def _handle_factory(settings, pipe):
                 output_path = f"outputs/{user_id}/{job_id}.png"
                 firebase.upload(output_local, output_path, content_type="image/png")
             finally:
-                edit_pipeline.reset_style(pipe, adapter_name)
+                if adapter_name:
+                    edit_pipeline.reset_style(pipe, adapter_name)
             publish_completion(
                 user_id=user_id, job_id=job_id, kind="edit",
                 status="success", output_path=output_path,

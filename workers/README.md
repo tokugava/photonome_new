@@ -30,15 +30,35 @@ workers/
 
 ## Setup
 
-```bash
-# 1. system deps for ai-toolkit (separate install)
-git clone https://github.com/ostris/ai-toolkit /opt/ai-toolkit
-cd /opt/ai-toolkit && pip install -r requirements.txt
+Use a dedicated virtualenv for the workers — they pull in heavy GPU deps (torch, diffusers from git, transformers, accelerate, peft) that shouldn't pollute the system Python.
 
-# 2. worker deps
+```bash
+# 1. workers venv
 cd workers
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
 pip install -e .
+
+# 2. ai-toolkit (separate install, separate venv — invoked by train_worker via subprocess)
+git clone https://github.com/ostris/ai-toolkit /opt/ai-toolkit
+cd /opt/ai-toolkit
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+deactivate
 ```
+
+`train_worker` shells out to ai-toolkit via `subprocess.run([sys.executable, ...])` using the *workers* venv's interpreter by default. If ai-toolkit's deps conflict with the workers venv, point `train_worker` at ai-toolkit's interpreter by overriding `sys.executable` — set `AI_TOOLKIT_PYTHON` env var and update `core/models/training.py` to use it. Simplest path: share one venv if the deps are compatible.
+
+Activate the workers venv before running any worker:
+
+```bash
+cd workers && source .venv/bin/activate
+make edit          # or: python edit_worker.py
+```
+
+The `.venv/` directory is already gitignored (see root `.gitignore` Python section).
 
 Environment variables (all optional; defaults in `core/config.py`):
 - `PHOTONOME_GCP_PROJECT` (default: `photonome`)
@@ -79,6 +99,31 @@ make edit       # python edit_worker.py
 make train      # python train_worker.py
 make generate   # python generate_worker.py
 ```
+
+### tmux session (recommended)
+
+Run all three workers in a named tmux session with one window each:
+
+```bash
+# Create session with 3 windows
+tmux new-session -d -s photonome -n train
+
+# Train worker
+tmux send-keys -t photonome:train "cd /home/kemal/Projects/photonome_new/workers && source .venv/bin/activate && make train" Enter
+
+# Edit worker
+tmux new-window -t photonome -n edit
+tmux send-keys -t photonome:edit "cd /home/kemal/Projects/photonome_new/workers && source .venv/bin/activate && make edit" Enter
+
+# Generate worker
+tmux new-window -t photonome -n generate
+tmux send-keys -t photonome:generate "cd /home/kemal/Projects/photonome_new/workers && source .venv/bin/activate && make generate" Enter
+
+# Attach
+tmux attach -t photonome
+```
+
+Switch between windows with `Ctrl+b 0/1/2` or by name: `Ctrl+b w`.
 
 Each worker:
 1. Loads its model into VRAM at startup (only `train_worker` skips this — ai-toolkit loads its own).
@@ -138,4 +183,24 @@ Offline (no Pub/Sub, no Firebase publish):
 ```bash
 echo '{"userId":"u1","jobId":"j1","inputImagePath":"test/in.jpg","style":"flat-cartoon","prompt":"smiling"}' > tests/edit.json
 make smoke-edit
+```
+
+## Troubleshooting
+
+### `ERROR: No matching distribution found for torchcodec==0.9.1`
+
+Hit while installing ai-toolkit's requirements on aarch64 / Python 3.12 (DGX Spark). `torchcodec==0.9.1` has no aarch64+cp312 wheel — only `0.11.x` is published. torchcodec is for video/audio decoding and isn't on the LoRA training path, so a version bump is safe.
+
+ai-toolkit splits its deps across `requirements.txt` and `requirements_base.txt` (and possibly more), so patch all of them:
+
+```bash
+find /opt/ai-toolkit -maxdepth 2 -name 'requirements*.txt' -exec sed -i 's/torchcodec==0.9.1/torchcodec==0.11.1/g' {} +
+pip install -r /opt/ai-toolkit/requirements.txt
+```
+
+Or drop the pin entirely and let pip pick whatever is available:
+
+```bash
+find /opt/ai-toolkit -maxdepth 2 -name 'requirements*.txt' -exec sed -i 's/^torchcodec==.*$/torchcodec/' {} +
+pip install -r /opt/ai-toolkit/requirements.txt
 ```

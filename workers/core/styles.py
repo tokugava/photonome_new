@@ -4,6 +4,12 @@ STYLE_LORAS: dict[str, tuple[str, str | None, float]] = {
         None,
         1.0,
     ),
+    "lego": ("Kontext-Style/LEGO_lora", None, 1.0),
+    "paper-cutting": ("Kontext-Style/Paper_Cutting_lora", None, 1.0),
+    "irasutoya": ("Kontext-Style/Irasutoya_lora", None, 1.0),
+    "ghibli": ("Kontext-Style/Ghibli_lora", None, 1.0),
+    "american-cartoon": ("Kontext-Style/American_Cartoon_lora", None, 1.0),
+    "clay-toy": ("Kontext-Style/Clay_Toy_lora", None, 1.0),
 }
 
 

@@ -1,5 +1,4 @@
 import json
-from datetime import timedelta
 from typing import Callable, NoReturn
 
 import structlog
@@ -21,7 +20,7 @@ def run_subscriber(subscription: str, handler: Handler, lease_hours: int = 2) ->
     flow = pubsub_v1.types.FlowControl(
         max_messages=1,
         max_bytes=10 * 1024 * 1024,
-        max_lease_duration=timedelta(hours=lease_hours),
+        max_lease_duration=lease_hours * 3600.0,
     )
 
     def _callback(message: Message) -> None:
