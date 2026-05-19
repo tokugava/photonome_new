@@ -99,15 +99,27 @@ exports.onJobCompletion = onMessagePublished(COMPLETION_TOPIC, async (event) => 
   };
   if (payload.outputPath) {
     update.outputPath = payload.outputPath;
+    const objectPath = payload.outputPath.replace(/^gs:\/\/[^/]+\//, "");
+    const file = storage.bucket().file(objectPath);
     try {
-      const objectPath = payload.outputPath.replace(/^gs:\/\/[^/]+\//, "");
-      const [url] = await storage
-          .bucket()
-          .file(objectPath)
-          .getSignedUrl({ action: "read", expires: Date.now() + 7 * 24 * 60 * 60 * 1000 });
+      const [url] = await file.getSignedUrl({
+        action: "read",
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      });
       update.outputUrl = url;
     } catch (err) {
-      logger.warn("signed_url_failed", { jobId: payload.jobId, error: String(err) });
+      logger.warn("signed_url_failed_trying_download_token", { jobId: payload.jobId, error: String(err) });
+      try {
+        const { randomUUID } = require("crypto");
+        const token = randomUUID();
+        await file.setMetadata({ metadata: { firebaseStorageDownloadTokens: token } });
+        const bucketName = storage.bucket().name;
+        const encoded = encodeURIComponent(objectPath);
+        const base = "https://firebasestorage.googleapis.com/v0/b";
+        update.outputUrl = `${base}/${bucketName}/o/${encoded}?alt=media&token=${token}`;
+      } catch (err2) {
+        logger.warn("download_token_failed", { jobId: payload.jobId, error: String(err2) });
+      }
     }
   }
   if (payload.error) update.error = payload.error;
